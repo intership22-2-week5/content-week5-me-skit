@@ -126,7 +126,7 @@ class Computer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.name}, stock: {self.quantity}'
+        return f'{self.name}, stock: {self.quantity}, price: {self.total_cost}'
 
 
     def decrement(self):
@@ -168,34 +168,46 @@ class Computer(models.Model):
 
 
 class Order(models.Model):
-    computer = models.ForeignKey(Computer, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1)
     total_cost = models.FloatField(null=True, blank=True)
+    code = models.CharField(max_length=25, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return f'Order No. {self.id}'
+
+
+class OrderDetails(models.Model):
+    quantity = models.IntegerField(default=1)
+    total = models.FloatField(blank=True, null=True)
+    computer = models.ForeignKey(Computer, on_delete=models.CASCADE, blank=True)
+    orden = models.ForeignKey(Order, on_delete=models.CASCADE, blank=True)
 
     def __str__(self):
-        return f'Order No. {self.id}, {self.quantity} {self.computer.name}'
+        return f'{self.orden} - {self.computer}'
 
 
     def decrement(self):
-        computer = Computer.objects.filter(id=self.computer.id)[0]
+        if self.computer.quantity >= self.quantity:
+            self.computer.quantity = self.computer.quantity - self.quantity
+            self.computer.save()
 
-        if computer.quantity >= self.quantity:
-            computer.quantity = self.computer.quantity - self.quantity
-            computer.save()
-
-            self.total_cost = computer.total_cost * self.quantity
+            # print('*' * 50)
+            # print(self.computer)
+            self.total = self.computer.total_cost * self.quantity
+            # print('OrderDetail total: {}, computer cost: {}, quantity: {}'.format(self.total,  self.computer.total_cost, self.quantity))
+            self.orden.total_cost = self.orden.total_cost + self.total if self.orden.total_cost else self.total
+            self.orden.save()
+            # print('Order total Cost: {}'.format(self.orden.total_cost))
+            # print('*' * 50)
 
             return True
         
-        self.total_cost = 0
         return False
 
     def save(self, *args, **kwargs):
         if self.decrement():
-            super(Order, self).save(*args, **kwargs)
+            super(OrderDetails, self).save(*args, **kwargs)
             return True
 
         return False

@@ -1,5 +1,6 @@
+from dataclasses import fields
 from rest_framework import serializers
-from .models import Keyboard, Mouse, Display, Speaker, Motherboard, Processor, Computer, Order
+from .models import Keyboard, Mouse, Display, Speaker, Motherboard, Processor, Computer, Order, OrderDetails
 
 
 class KeyboardSerializer(serializers.ModelSerializer):
@@ -48,14 +49,22 @@ class ComputerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Computer
-        # exclude = ['total_cost']
-        fields = ['id', 'name', 'quantity', 'keyboard', 'mouse', 'display', 'speaker', 'motherboard', 'processor', 'created_at', 'updated_at']
+        read_only_fields = ['total_cost']
+        fields = ['id', 'name', 'quantity', 'keyboard', 'mouse', 'display', 'speaker', 'motherboard', 'processor', 'total_cost', 'created_at', 'updated_at']
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    computer = serializers.PrimaryKeyRelatedField(queryset = Computer.objects.all())
+    # computer = serializers.PrimaryKeyRelatedField(queryset = Computer.objects.all())
 
     class Meta:
         model = Order
         # fields = '__all__'
-        fields = ['id', 'quantity', 'computer', 'created_at', 'updated_at']
+        read_only_fields = ['total_cost']
+        fields = ['id', 'code', 'created_at', 'updated_at', 'total_cost']
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderDetails
+        read_only_fields = ['total']
+        fields = '__all__'
